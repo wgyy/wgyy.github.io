@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="yes" name="apple-touch-fullscreen" />
     <meta content="yes" name="apple-mobile-web-app-capable" />
-    <link rel="apple-touch-icon-precomposed" href="https://wgyy.github.io/images/icon.png" />
+    <link id="J_desktopIcon" rel="apple-touch-icon-precomposed" />
     <title>Document</title>
 </head>
 
@@ -30,6 +30,7 @@
 
     <script>
         document.documentElement.style.fontSize = document.documentElement.clientWidth * 100 / 375 + 'px';
+
         function redirect() {
             setTitle()
             if (window.navigator.standalone) {
@@ -40,6 +41,8 @@
             } else {
                 // TODO
                 document.querySelector('.main').style.display="block"
+                document.getElementById('J_desktopIcon').setAttribute('href', '/images/icon.png');
+                
             }
         }
 
