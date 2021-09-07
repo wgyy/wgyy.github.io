@@ -1,24 +1,230 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" >
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="yes" name="apple-touch-fullscreen" />
+    <meta content="yes" name="apple-mobile-web-app-capable" />
     <title>Document</title>
 </head>
 
 <body>
-    目标页面
+    <div class="main" style="display: none;">
+        <div class="title">
+            添加到桌面
+        </div>
+        <div class="guide">
+            <div class="content">
+              <p class="tips">点击下方工具栏上的<img class="icon" src="./images/1.png"></p>
+              <p class="tips">并选择<img class="icon" src="./images/2.png">“<strong>添加到主屏幕</strong>”</p>
+              <img class="toolbar" src="./images/3.jpg">
+            </div>
+            <img class="arrow" src="./images/4.png">
+          </div>
+    </div>
+
+
+
     <script>
-        if (window.navigator.standalone) {
-            //全屏，点击主屏幕图标
-            var search = document.location.search
-            window.open('addilink://' + search)
-        }else{
-            // TODO
+        document.documentElement.style.fontSize = document.documentElement.clientWidth * 100 / 375 + 'px';
+        function redirect() {
+            setTitle()
+            if (window.navigator.standalone) {
+                //全屏，点击主屏幕图标
+                var search = document.location.search
+                window.location.href = 'addilink://' + search
+                document.querySelector('.main').style.display="none"
+            } else {
+                // TODO
+                document.querySelector('.main').style.display="block"
+            }
         }
+
+        function setTitle(){
+            var nickname=getQueryVariable('nickname')
+            document.title=nickname?decodeURIComponent(nickname):'我的设备'
+        }
+
+        function getQueryVariable(variable) {
+            var query = window.location.search.substring(1);
+            var vars = query.split("&");
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split("=");
+                if (pair[0] == variable) { return pair[1]; }
+            }
+            return (false);
+        }
+
+        redirect()
+        document.addEventListener('visibilitychange', function () {
+            redirect()
+        });
     </script>
 </body>
+<style>
+    html,body{
+        margin:0px;
+        padding:0px;
+        height:100%;
+    }
+    .main{
+        width:100%;
+        height:100%;
+    }
+    .title{
+        text-align: center;
+        margin-top: .3rem;
+        font-size:0.2rem;
+    }
+    * {
+        margin: 0;
+        padding: 0;
+      }
+      html,body{
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: #F3F2F2;
+        text-align: center;
+      }
+      .backguide {
+        height: 100%;
+        width: 100%;
+      }
+      .backguide .enter {
+        position: absolute;
+        height: 0.44rem;
+        width: 3.43rem;
+        background: #108EE9;
+        border: 0;
+        font-size: 0.18rem;
+        color: white;
+        bottom: 0.52rem;
+        left: 0.16rem;
+        border-radius: 0.02rem;
+      }
+      .backguide .tips {
+        margin-top: 1.29rem;
+        font-size: 0.14rem;
+        line-height: 0.2rem;
+        color: #999999;
+      }
+      .backguide .icon {
+        height: 0.71rem;
+        width: 0.71rem;
+        border-radius: 0.14rem;
+      }
+      .backguide .appname {
+        font-size: 0.18rem;
+        line-height: 0.25rem;
+        color: #333333;
+        margin-top: -0.14rem;
+      }
+      .main {
+        color: #333;
+        text-align: center;
+      }
+      .subject {
+        margin-top: .3rem;
+        font-size: 0.2rem;
+      }
 
+      .preview {
+        margin-top:0.36rem;
+        position: relative;
+      }
+      .preview .content {
+        position: relative;
+        margin: 0 0.55rem;
+      }
+      .preview .bg {
+        width: 2.5rem;
+        margin-left: 0.05rem;
+        position: relative;
+      }
+      .preview .icon {
+        position: absolute;
+        display: block;
+        border-radius: 21%;
+      }
+      .preview .title {
+        position: absolute;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .preview .icon.large {
+        width: 1.25rem;
+        height: 1.25rem;
+        left: 1.22rem;
+        top: .42rem
+      }
+      .preview .title.large {
+        width: 1.5rem;
+        left: 1.13rem;
+        top: 1.70rem;
+        font-size: 0.17rem;
+      }
+      .preview .icon.small {
+        width: 0.14rem;
+        height: 0.14rem;
+        left: 0.8rem;
+        top: 1.125rem;
+      }
+      .preview .title.small {
+        width: 0.16rem;
+        left: 0.78rem;
+        top: 1.266rem;
+        font-size: 0.025rem;
+      }
+
+      .guide {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        bottom: .30rem;
+      }
+      .guide .content {
+        position: relative;
+        z-index: 20;
+        width: 3.50rem;
+        padding-top: 0.16rem;
+        padding-bottom: 0.06rem;
+        margin: 0 auto;
+        border-radius: 0.04rem;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.13);
+        background: #fff;
+        font-size: .14rem;
+      }
+      .guide .tips {
+        position: relative;
+        z-index: 20;
+      }
+      .guide .icon {
+        width: 0.20rem;
+        height: 0.24rem;
+        margin: 0 0.035rem 0.02rem;
+        vertical-align: bottom;
+      }
+      .guide .toolbar {
+        width: 100%;
+        height: auto;
+        margin-top: -0.12rem;
+        position: relative;
+        z-index: 10;
+      }
+      .guide .arrow {
+        width: 0.27rem;
+        height: auto;
+        position: absolute;
+        left: 50%;
+        bottom: -0.26rem;
+        margin-left: -0.135rem;
+        z-index: 10;
+      }
+
+</style>
 </html>
