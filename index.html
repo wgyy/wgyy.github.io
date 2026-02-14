@@ -144,7 +144,7 @@
         const sizes = new Float32Array(particleCount);
 
         let idx = 0;
-        const scale = 0.5;
+        const scale = 0.7;
 
         for (let i = 0; i < particleCount; i++) {
             const t = Math.random() * Math.PI * 2;
@@ -277,9 +277,9 @@
             return 1 - Math.pow(1 - t, 3);
         }
 
-        // 极慢的心跳 - 每10秒跳动一次
+        // 心跳 - 每5秒跳动一次
         function getHeartbeat(t) {
-            const beatPeriod = 10; // 10秒一个完整周期
+            const beatPeriod = 5; // 5秒一个完整周期
             const phase = (t % beatPeriod) / beatPeriod; // 0 到 1
             // 缓慢的收缩舒张
             return Math.sin(phase * Math.PI * 2) * 0.04;
