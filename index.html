@@ -33,16 +33,26 @@
         body {
             font-family: 'Source Code Pro', monospace;
             background: var(--bg-main);
-            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: -webkit-fill-available;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+            padding-top: env(safe-area-inset-top, 20px);
             background-image:
                 radial-gradient(ellipse at top, #1f1f3a 0%, transparent 50%),
                 radial-gradient(ellipse at bottom, #0f0f1a 0%, transparent 50%);
-            overflow-x: hidden;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
             -webkit-overflow-scrolling: touch;
+        }
+
+        html {
+            overflow: hidden;
+            height: 100%;
         }
 
         .game-container {
@@ -54,7 +64,10 @@
                 0 0 100px rgba(233, 69, 96, 0.1),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05);
             max-width: 520px;
+            max-height: 100dvh;
+            max-height: -webkit-fill-available;
             width: 100%;
+            overflow-y: auto;
         }
 
         .header {
@@ -221,6 +234,38 @@
             background: rgba(255, 107, 107, 0.2);
         }
 
+        .cell.has-notes .cell-notes {
+            display: grid;
+        }
+
+        .cell-notes {
+            display: none;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 2px;
+            pointer-events: none;
+        }
+
+        .cell-note {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 400;
+        }
+
+        @media (max-width: 480px) {
+            .cell-note {
+                font-size: 0.45rem;
+            }
+        }
+
         .cell:nth-child(3n) {
             border-right: 2px solid var(--grid-line);
         }
@@ -283,23 +328,25 @@
         .special-btns {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 8px;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
         .special-btn {
-            padding: 14px 28px;
+            padding: 14px 20px;
             border: none;
             background: var(--secondary);
             color: var(--fixed);
             font-family: 'Source Code Pro', monospace;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             border-radius: 10px;
             transition: all 0.15s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            white-space: nowrap;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
@@ -316,6 +363,15 @@
             background: var(--secondary);
         }
 
+        .special-btn.note-btn {
+            background: var(--secondary);
+        }
+
+        .special-btn.note-btn.active {
+            background: linear-gradient(135deg, #4ecca3, #3db892);
+            box-shadow: 0 2px 10px rgba(78, 204, 163, 0.4);
+        }
+
         .special-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
@@ -324,6 +380,7 @@
         .hints-left {
             font-size: 0.8rem;
             opacity: 0.8;
+            white-space: nowrap;
         }
 
         .status {
@@ -372,12 +429,15 @@
         @media (max-width: 480px) {
             body {
                 padding: 10px;
+                padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+                padding-top: calc(10px + env(safe-area-inset-top, 0px));
                 align-items: flex-start;
-                padding-top: 20px;
             }
 
             .game-container {
                 padding: 1rem;
+                max-height: calc(100dvh - 20px);
+                max-height: calc(-webkit-fill-available - 20px);
             }
 
             .header {
@@ -436,9 +496,10 @@
             }
 
             .special-btn {
-                padding: 12px 20px;
-                font-size: 0.85rem;
-                flex: 1;
+                padding: 12px 14px;
+                font-size: 0.8rem;
+                flex: 1 1 auto;
+                min-width: 80px;
                 justify-content: center;
             }
 
@@ -498,6 +559,9 @@
         </div>
 
         <div class="special-btns">
+            <button class="special-btn note-btn" id="noteBtn">
+                <span>📝</span> 笔记
+            </button>
             <button class="special-btn eraser-btn" id="eraserBtn">
                 <span>⌫</span> 清除
             </button>
@@ -525,6 +589,8 @@
                 this.hintsLeft = 3;
                 this.gameWon = false;
                 this.sameNumbers = [];
+                this.noteMode = false;
+                this.notes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
 
                 this.difficultyConfig = {
                     easy: { remove: 38 },
@@ -565,6 +631,7 @@
 
                 document.getElementById('eraserBtn').addEventListener('click', () => this.eraseCell());
                 document.getElementById('hintBtn').addEventListener('click', () => this.useHint());
+                document.getElementById('noteBtn').addEventListener('click', () => this.toggleNoteMode());
 
                 document.addEventListener('keydown', (e) => this.handleKeyboard(e));
             }
@@ -648,6 +715,8 @@
                 this.timer = 0;
                 this.selectedCell = null;
                 this.sameNumbers = [];
+                this.noteMode = false;
+                this.notes = Array(9).fill(null).map(() => Array(9).fill(null).map(() => new Set()));
                 this.stopTimer();
                 this.updateTimerDisplay();
                 this.updateHintsDisplay();
@@ -679,6 +748,20 @@
                             } else {
                                 cell.classList.add('user-input');
                             }
+                        } else {
+                            const noteSet = this.notes[r][c];
+                            if (noteSet && noteSet.size > 0) {
+                                cell.classList.add('has-notes');
+                                const notesEl = document.createElement('div');
+                                notesEl.className = 'cell-notes';
+                                for (let n = 1; n <= 9; n++) {
+                                    const noteEl = document.createElement('span');
+                                    noteEl.className = 'cell-note';
+                                    noteEl.textContent = noteSet.has(n) ? n : '';
+                                    notesEl.appendChild(noteEl);
+                                }
+                                cell.appendChild(notesEl);
+                            }
                         }
 
                         cell.addEventListener('click', () => this.selectCell(r, c));
@@ -693,6 +776,11 @@
                 if (this.gameWon) return;
 
                 this.selectedCell = { row, col };
+
+                if (this.fixed[row][col] !== 0) {
+                    this.noteMode = false;
+                    document.getElementById('noteBtn').classList.remove('active');
+                }
 
                 document.querySelectorAll('.cell').forEach(cell => {
                     cell.classList.remove('selected', 'highlighted', 'same-number');
@@ -750,11 +838,23 @@
                     this.timerStarted = true;
                 }
 
-                this.board[this.selectedCell.row][this.selectedCell.col] = num;
+                if (this.noteMode) {
+                    const { row, col } = this.selectedCell;
+                    const noteSet = this.notes[row][col];
+                    if (noteSet.has(num)) {
+                        noteSet.delete(num);
+                    } else {
+                        noteSet.add(num);
+                    }
+                } else {
+                    this.board[this.selectedCell.row][this.selectedCell.col] = num;
+                    this.notes[this.selectedCell.row][this.selectedCell.col].clear();
+                }
+
                 this.selectCell(this.selectedCell.row, this.selectedCell.col);
                 this.renderBoard();
 
-                if (this.checkWin()) {
+                if (!this.noteMode && this.checkWin()) {
                     this.gameWon = true;
                     this.stopTimer();
                     this.showWinMessage();
@@ -766,6 +866,7 @@
                 if (this.fixed[this.selectedCell.row][this.selectedCell.col] !== 0) return;
 
                 this.board[this.selectedCell.row][this.selectedCell.col] = 0;
+                this.notes[this.selectedCell.row][this.selectedCell.col].clear();
                 this.selectCell(this.selectedCell.row, this.selectedCell.col);
                 this.renderBoard();
             }
@@ -800,6 +901,19 @@
                 document.getElementById('hintBtn').disabled = this.hintsLeft <= 0;
             }
 
+            toggleNoteMode() {
+                if (!this.selectedCell || this.gameWon) return;
+                if (this.fixed[this.selectedCell.row][this.selectedCell.col] !== 0) return;
+
+                this.noteMode = !this.noteMode;
+                const noteBtn = document.getElementById('noteBtn');
+                if (this.noteMode) {
+                    noteBtn.classList.add('active');
+                } else {
+                    noteBtn.classList.remove('active');
+                }
+            }
+
             handleKeyboard(e) {
                 if (this.gameWon) return;
 
@@ -807,6 +921,8 @@
                     this.inputNumber(parseInt(e.key));
                 } else if (e.key === 'Backspace' || e.key === 'Delete') {
                     this.eraseCell();
+                } else if (e.key === 'n' || e.key === 'N') {
+                    this.toggleNoteMode();
                 } else if (e.key === 'ArrowUp' && this.selectedCell) {
                     e.preventDefault();
                     const newRow = Math.max(0, this.selectedCell.row - 1);
@@ -908,6 +1024,7 @@
                 const hasSelection = this.selectedCell !== null;
                 document.getElementById('eraserBtn').disabled = !hasSelection;
                 document.getElementById('hintBtn').disabled = !hasSelection || this.hintsLeft <= 0;
+                document.getElementById('noteBtn').disabled = !hasSelection;
                 document.getElementById('numBtnErase').disabled = !hasSelection;
 
                 document.querySelectorAll('.num-btn:not(.empty)').forEach(btn => {
